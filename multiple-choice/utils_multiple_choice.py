@@ -63,7 +63,6 @@ class InputFeatures:
     Property names are the same names as the corresponding inputs to a model.
     """
 
-    example_id: str
     input_ids: List[List[int]]
     attention_mask: Optional[List[List[int]]]
     token_type_ids: Optional[List[List[int]]]
@@ -475,7 +474,6 @@ def convert_examples_to_features(
 
         features.append(
             InputFeatures(
-                example_id=example.example_id,
                 input_ids=input_ids,
                 attention_mask=attention_mask,
                 token_type_ids=token_type_ids,

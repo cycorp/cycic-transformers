@@ -80,7 +80,8 @@ class DataTrainingArguments:
     overwrite_cache: bool = field(
         default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
     )
-
+    predictions_file: str = field(
+        default="predictions.lst", metadata={"help":"File to write predictions for the evaluation set"})
 
 def main():
     # See all possible arguments in src/transformers/training_args.py
@@ -207,16 +208,28 @@ def main():
     if training_args.do_eval and training_args.local_rank in [-1, 0]:
         logger.info("*** Evaluate ***")
 
-        result = trainer.evaluate()
+        #get predictions and metrics
+        #result = trainer.evaluate()
+        eval_dataloader = trainer.get_test_dataloader(eval_dataset)
+        result = trainer.predict(eval_dataset)
+        preds = np.argmax(result.predictions, axis=1)
+        metrics = result.metrics
+
+        output_preds_file = os.path.join(training_args.output_dir, data_args.predictions_file)
+        with open(output_preds_file, 'w') as writer:
+            logger.info("**** Writing predictions to {} ****".format(output_preds_file))
+            for pred in preds:
+                result_pred = 
+                writer.write("{}\n".format(pred))
 
         output_eval_file = os.path.join(training_args.output_dir, "eval_results.txt")
         with open(output_eval_file, "w") as writer:
             logger.info("***** Eval results *****")
-            for key, value in result.items():
+            for key, value in metrics.items():
                 logger.info("  %s = %s", key, value)
                 writer.write("%s = %s\n" % (key, value))
 
-            results.update(result)
+            results.update(metrics)
 
     return results
 

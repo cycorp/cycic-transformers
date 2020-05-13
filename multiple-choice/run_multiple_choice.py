@@ -91,6 +91,8 @@ def main():
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
+    logger.info("Using cache dir: {}".format(model_args.cache_dir))
+
     if (
         os.path.exists(training_args.output_dir)
         and os.listdir(training_args.output_dir)
@@ -161,6 +163,7 @@ def main():
             overwrite_cache=data_args.overwrite_cache,
             mode=Split.train,
             local_rank=training_args.local_rank,
+            cache_dir=model_args.cache_dir,
         )
         if training_args.do_train
         else None
@@ -172,8 +175,9 @@ def main():
             task=data_args.task_name,
             max_seq_length=data_args.max_seq_length,
             overwrite_cache=data_args.overwrite_cache,
-            mode=Split.dev,
+            mode=Split.test,
             local_rank=training_args.local_rank,
+            cache_dir=model_args.cache_dir,
         )
         if training_args.do_eval
         else None
@@ -219,7 +223,6 @@ def main():
         with open(output_preds_file, 'w') as writer:
             logger.info("**** Writing predictions to {} ****".format(output_preds_file))
             for pred in preds:
-                result_pred = 
                 writer.write("{}\n".format(pred))
 
         output_eval_file = os.path.join(training_args.output_dir, "eval_results.txt")

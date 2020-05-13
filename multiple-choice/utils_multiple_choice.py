@@ -92,11 +92,14 @@ class MultipleChoiceDataset(Dataset):
         overwrite_cache=False,
         mode: Split = Split.train,
         local_rank=-1,
+        cache_dir=None
     ):
         processor = processors[task]()
+        if cache_dir is None:
+            cache_dir = data_dir
 
         cached_features_file = os.path.join(
-            data_dir,
+            cache_dir,
             "cached_{}_{}_{}_{}".format(mode.value, tokenizer.__class__.__name__, str(max_seq_length), task,),
         )
         with torch_distributed_zero_first(local_rank):
@@ -330,7 +333,36 @@ class CycicProcessor(DataProcessor):
             ))
         return examples
             
+class CycicLeaderboardProcessor(DataProcessor):
+    """Modified version of CycicProcessor for the AI2 leaderboard"""
 
+    def get_test_examples(self, data_dir):
+        logger.info("LOOKING AT {} test".format(data_dir))
+        question_file = os.path.join(data_dir, "cycic.jsonl")
+        examples = []
+        with open(question_file, 'r') as f:
+            for line in f:
+                question = json.loads(line)
+                example_id=question["run_id"]
+                question_type = question["questionType"]
+                if question_type == "true/false":
+                    answers = [question["answer_option0"], question["answer_option1"], "", "", ""]
+                else:
+                    answers = [question["answer_option0"], question["answer_option1"], question["answer_option2"], question["answer_option3"], question["answer_option4"]]
+                    contexts = [question["question"], question["question"], question["question"], question["question"], question["question"]]
+                examples.append(InputExample(
+                example_id=example_id,
+                question=question_type,
+                contexts=contexts,
+                endings=answers,
+                label='0'
+            ))
+        return examples
+
+    def get_labels(self):
+        """See base class."""
+        return ['0', '1', '2', '3', '4']
+    
 class ArcProcessor(DataProcessor):
     """Processor for the ARC data set (request from allennlp)."""
 
@@ -488,7 +520,7 @@ def convert_examples_to_features(
     return features
 
 
-processors = {"race": RaceProcessor, "swag": SwagProcessor, "arc": ArcProcessor, "cycic": CycicProcessor}
+processors = {"race": RaceProcessor, "swag": SwagProcessor, "arc": ArcProcessor, "cycic": CycicProcessor, "cycic-leaderboard": CycicLeaderboardProcessor}
 
 
 MULTIPLE_CHOICE_TASKS_NUM_LABELS = {"race", 4, "swag", 4, "arc", 4, "cyc", 5}

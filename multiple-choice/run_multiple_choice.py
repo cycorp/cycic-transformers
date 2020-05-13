@@ -175,11 +175,25 @@ def main():
             task=data_args.task_name,
             max_seq_length=data_args.max_seq_length,
             overwrite_cache=data_args.overwrite_cache,
-            mode=Split.test,
+            mode=Split.dev,
             local_rank=training_args.local_rank,
             cache_dir=model_args.cache_dir,
         )
         if training_args.do_eval
+        else None
+    )
+    test_dataset = (
+        MultipleChoiceDataset(
+            data_dir=data_args.data_dir,
+            tokenizer=tokenizer,
+            task=data_args.task_name,
+            max_seq_length=data_args.max_seq_length,
+            overwrite_cache=data_args.overwrite_cache,
+            mode=Split.test,
+            local_rank=training_args.local_rank,
+            cache_dir=model_args.cache_dir,
+        )
+        if training_args.do_predict
         else None
     )
 
@@ -212,27 +226,28 @@ def main():
     if training_args.do_eval and training_args.local_rank in [-1, 0]:
         logger.info("*** Evaluate ***")
 
-        #get predictions and metrics
-        #result = trainer.evaluate()
-        eval_dataloader = trainer.get_test_dataloader(eval_dataset)
-        result = trainer.predict(eval_dataset)
+        result = trainer.evaluate()
+
+        output_eval_file = os.path.join(training_args.output_dir, "eval_results.txt")
+        with open(output_eval_file, "w") as writer:
+            logger.info("***** Eval results *****")
+            for key, value in result.items():
+                logger.info("  %s = %s", key, value)
+                writer.write("%s = %s\n" % (key, value))
+
+            results.update(result)
+
+    if training_args.do_predict and training_args.local_rank in [-1, 0]:
+
+        result = trainer.predict(test_dataset)
         preds = np.argmax(result.predictions, axis=1)
-        metrics = result.metrics
 
         output_preds_file = os.path.join(training_args.output_dir, data_args.predictions_file)
         with open(output_preds_file, 'w') as writer:
             logger.info("**** Writing predictions to {} ****".format(output_preds_file))
             for pred in preds:
                 writer.write("{}\n".format(pred))
-
-        output_eval_file = os.path.join(training_args.output_dir, "eval_results.txt")
-        with open(output_eval_file, "w") as writer:
-            logger.info("***** Eval results *****")
-            for key, value in metrics.items():
-                logger.info("  %s = %s", key, value)
-                writer.write("%s = %s\n" % (key, value))
-
-            results.update(metrics)
+        
 
     return results
 

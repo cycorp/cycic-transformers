@@ -3,7 +3,7 @@
 This repository demonstrates how to train and test on the CycIC dataset using the popular transformers library from huggingface. The original example scripts can be found at [transformers/examples/multiple-choice/](https://github.com/huggingface/transformers/tree/master/examples/multiple-choice). Here, they have been extended with an additional data processing class for the CycIC task.
 
 ## Train on CycIC:
-To train a transformers model on CycIC, first download the CycIC dataset and install transformers. You can train the model using the run_multiple_choice script, like so:
+To train a transformers model on CycIC, first download the [CycIC dataset](https://leaderboard.allenai.org/cycic/submissions/get-started) and install transformers. You can train the model using the run_multiple_choice script, like so:
 ```
 export CYCIC_DIR=/path/to/cycic_data
 python ./multiple-choice/run_multiple_choice.py \
@@ -23,7 +23,7 @@ python ./multiple-choice/run_multiple_choice.py \
 ```
 
 ## Submit to the AI2 leaderboard:
-The script run_model.sh gives an example of how to run this model as a submission for the AI2 leaderboard. Notice that it uses the cycic-leaderboard data processor, which does not attempt to load labels for the data.
+The script run_model.sh gives an example of how to run this model as a submission for the [AI2 leaderboard](https://leaderboard.allenai.org/cycic/submissions/get-started). Notice that it uses the cycic-leaderboard data processor, which does not attempt to load labels for the data.
 
 ## Evaluate results:
 After generating a predictions file, you can use the eval.py script to compute accuracy broken down by different question categories. For example,

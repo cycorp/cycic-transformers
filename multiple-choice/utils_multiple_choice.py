@@ -20,7 +20,7 @@ import csv
 import glob
 import json
 import logging
-import os
+import os, sys
 from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
@@ -280,25 +280,29 @@ class SwagProcessor(DataProcessor):
 class CycicProcessor(DataProcessor):
     """Processor for the CycIC data set"""
 
+    def get_filename(self, data_dir, name):
+        path = os.path.join(data_dir, '*'+name)
+        return glob.glob(path)[-1]
+    
     def get_train_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
-        question_file = os.path.join(data_dir, "CycIC_training_questions.jsonl")
-        answer_file = os.path.join(data_dir, "CycIC_training_labels.jsonl")
+        question_file = self.get_filename(data_dir, "training_questions.jsonl")
+        answer_file = self.get_filename(data_dir, "training_labels.jsonl")
         return self._create_examples(self._read_json(question_file), self._read_json(answer_file), "train")
 
     def get_dev_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} dev".format(data_dir))
-        question_file = os.path.join(data_dir, "CycIC_dev_questions.jsonl")
-        answer_file = os.path.join(data_dir, "CycIC_dev_labels.jsonl")
+        question_file = self.get_filename(data_dir, "dev_questions.jsonl")
+        answer_file = self.get_filename(data_dir, "dev_labels.jsonl")
         return self._create_examples(self._read_json(question_file), self._read_json(answer_file), "dev")
 
     def get_test_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} test".format(data_dir))
-        question_file = os.path.join(data_dir, "CycIC_test_questions.jsonl")
-        answer_file = os.path.join(data_dir, "CycIC_test_labels.jsonl")
+        question_file = self.get_filename(data_dir, "test_questions.jsonl")
+        answer_file = self.get_filename(data_dir, "test_labels.jsonl")
         return self._create_examples(self._read_json(question_file), self._read_json(answer_file), "test")
 
     def get_labels(self):
@@ -306,10 +310,15 @@ class CycicProcessor(DataProcessor):
         return ['0', '1', '2', '3', '4']
 
     def _read_json(self, input_file):
-        with open(input_file, 'r') as f:
+        with open(input_file, 'r', encoding='utf-8-sig') as f:
             examples = []
             for line in f:
-                examples.append(json.loads(line.replace(u'\\"', u'\"')))
+                try:
+                    data = json.loads(line)
+                except:
+                    print("Could not parse line {} in file {}".format(line, input_file))
+                    raise
+                examples.append(data)
             return examples
 
     def _create_examples(self, questions, answers, type):

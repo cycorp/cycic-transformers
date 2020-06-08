@@ -349,7 +349,7 @@ class CycicLeaderboardProcessor(DataProcessor):
         logger.info("LOOKING AT {} test".format(data_dir))
         question_file = os.path.join(data_dir, "cycic.jsonl")
         examples = []
-        with open(question_file, 'r') as f:
+        with open(question_file, 'r', encoding='utf-8-sig') as f:
             for line in f:
                 question = json.loads(line)
                 example_id=question["run_id"]

@@ -354,11 +354,11 @@ class CycicLeaderboardProcessor(DataProcessor):
                 question = json.loads(line)
                 example_id=question["run_id"]
                 question_type = question["questionType"]
+                contexts = [question["question"], question["question"], question["question"], question["question"], question["question"]]
                 if question_type == "true/false":
                     answers = [question["answer_option0"], question["answer_option1"], "", "", ""]
                 else:
                     answers = [question["answer_option0"], question["answer_option1"], question["answer_option2"], question["answer_option3"], question["answer_option4"]]
-                    contexts = [question["question"], question["question"], question["question"], question["question"], question["question"]]
                 examples.append(InputExample(
                 example_id=example_id,
                 question=question_type,

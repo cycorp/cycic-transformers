@@ -201,6 +201,14 @@ def main():
         preds = np.argmax(p.predictions, axis=1)
         return {"acc": simple_accuracy(preds, p.label_ids)}
 
+    def get_predictions_and_write_to_file(trainer, dataset, filename):
+        result = trainer.predict(dataset)
+        preds = np.argmax(result.predictions, axis=1)
+        with open(filename, 'w') as writer:
+            logger.info("**** Writing predictions to {} ****".format(filename))
+            for pred in preds:
+                writer.write("{}\n".format(pred))
+
     # Initialize our Trainer
     trainer = Trainer(
         model=model,
@@ -227,6 +235,7 @@ def main():
         logger.info("*** Evaluate ***")
 
         result = trainer.evaluate()
+        results.update(result)
 
         output_eval_file = os.path.join(training_args.output_dir, "eval_results.txt")
         with open(output_eval_file, "w") as writer:
@@ -235,18 +244,16 @@ def main():
                 logger.info("  %s = %s", key, value)
                 writer.write("%s = %s\n" % (key, value))
 
-            results.update(result)
+        # save predictions on dev set as well
+        if training_args.local_rank in [-1, 0]:
+            output_preds_file = os.path.join(training_args.output_dir, "eval_predictions.lst")
+            get_predictions_and_write_to_file(trainer, eval_dataset, output_preds_file)
+
 
     if training_args.do_predict and training_args.local_rank in [-1, 0]:
 
-        result = trainer.predict(test_dataset)
-        preds = np.argmax(result.predictions, axis=1)
-
         output_preds_file = os.path.join(training_args.output_dir, data_args.predictions_file)
-        with open(output_preds_file, 'w') as writer:
-            logger.info("**** Writing predictions to {} ****".format(output_preds_file))
-            for pred in preds:
-                writer.write("{}\n".format(pred))
+        get_predictions_and_write_to_file(trainer, test_dataset, output_preds_file)
         
 
     return results
